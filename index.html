@@ -6,6 +6,8 @@
     <title>Topografie Quiz - West-Europa</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://unpkg.com/topojson-client@3"></script>
     <style>
         * {
             margin: 0;
@@ -739,6 +741,59 @@
             ]
         };
 
+        // School atlas pastel colors for countries
+        const countryColors = {
+            'Ireland': '#c8e6c9',        // Light green
+            'United Kingdom': '#ffcdd2', // Light red/pink
+            'Netherlands': '#fff9c4',    // Light yellow
+            'Belgium': '#ffe0b2',        // Light orange
+            'Luxembourg': '#e1bee7',     // Light purple
+            'France': '#bbdefb',         // Light blue
+            'Germany': '#d7ccc8',        // Light brown/beige
+            'Switzerland': '#f8bbd0',    // Light pink
+            'Austria': '#b2dfdb',        // Light teal
+            'Spain': '#ffecb3',          // Light amber
+            'Portugal': '#dcedc8',       // Light lime
+            'Italy': '#ffccbc',          // Light deep orange
+            'Denmark': '#e0f7fa',        // Light cyan
+            'Poland': '#f5f5f5',         // Light grey
+            'Czech Republic': '#fff3e0', // Light deep orange
+            'Czechia': '#fff3e0'         // Alternative name
+        };
+
+        // Western Europe countries to show
+        const westernEuropeCountries = [
+            'Ireland', 'United Kingdom', 'Netherlands', 'Belgium', 'Luxembourg',
+            'France', 'Germany', 'Switzerland', 'Austria', 'Spain', 'Portugal',
+            'Italy', 'Denmark', 'Poland', 'Czech Republic', 'Czechia'
+        ];
+
+        let countriesLayer = null;
+        let countriesGeoJSON = null;
+
+        // Load countries GeoJSON from Natural Earth (via GitHub)
+        async function loadCountriesData() {
+            try {
+                const response = await fetch('https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson');
+                const data = await response.json();
+                
+                // Filter to Western Europe only
+                countriesGeoJSON = {
+                    type: "FeatureCollection",
+                    features: data.features.filter(f => 
+                        westernEuropeCountries.includes(f.properties.ADMIN) ||
+                        westernEuropeCountries.includes(f.properties.name)
+                    )
+                };
+                console.log('Loaded', countriesGeoJSON.features.length, 'countries');
+            } catch (error) {
+                console.error('Failed to load countries data:', error);
+            }
+        }
+
+        // Load data on page load
+        loadCountriesData();
+
         // Game State
         let selectedCategory = null;
         let currentQuestions = [];
@@ -871,6 +926,22 @@
                 attribution: '© OpenStreetMap contributors © CARTO',
                 maxZoom: 19
             }).addTo(map);
+
+            // Add school atlas style country overlay
+            if (countriesGeoJSON && countriesGeoJSON.features.length > 0) {
+                countriesLayer = L.geoJSON(countriesGeoJSON, {
+                    style: function(feature) {
+                        const name = feature.properties.ADMIN || feature.properties.name;
+                        return {
+                            fillColor: countryColors[name] || '#f5f5f5',
+                            fillOpacity: 0.55,
+                            color: '#333333',
+                            weight: 2.5,
+                            opacity: 1
+                        };
+                    }
+                }).addTo(map);
+            }
 
             // Show rivers if wateren category selected
             if (selectedCategory === 'wateren') {
@@ -1211,8 +1282,8 @@
 
         // Filter controls for map styling
         const filterPresets = {
-            standard: 'brightness(1) saturate(1.2)',
-            contrast: 'brightness(0.95) contrast(1.2) saturate(1.3)'
+            standard: 'none',
+            contrast: 'brightness(0.9) contrast(1.25) saturate(1.15)'
         };
 
         document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -1224,6 +1295,9 @@
                 document.querySelector('.leaflet-tile-pane').style.filter = filter;
             });
         });
+
+        // Apply high contrast by default
+        document.querySelector('.leaflet-tile-pane').style.filter = filterPresets.contrast;
     </script>
 </body>
 </html>
