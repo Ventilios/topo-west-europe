@@ -667,7 +667,7 @@
                 { id: 'a', name: 'Atlantische Oceaan', lat: 48.0, lng: -12.0 },
                 { id: 'b', name: 'Het Kanaal', lat: 50.0, lng: -1.5 },
                 { id: 'c', name: 'Noordzee', lat: 56.0, lng: 3.5 },
-                { id: 'd', name: 'Oostzee', lat: 55.5, lng: 14.0 },
+                { id: 'd', name: 'Oostzee', lat: 55.5, lng: 18.0 },
                 { id: 'e', name: 'Middellandse Zee', lat: 41.5, lng: 5.0 },
                 { id: 'f', name: 'Theems', lat: 51.48, lng: 0.0 },
                 { id: 'g', name: 'Schelde', lat: 51.35, lng: 4.25 },
@@ -827,7 +827,7 @@
         });
 
         startBtn.addEventListener('click', startQuiz);
-        nextBtn.addEventListener('click', nextQuestion);
+        // Note: nextBtn click is handled via onclick in startQuiz/startRetryRound
 
         function createMarkerIcon(id, category) {
             const style = markerStyles[category];
@@ -1005,6 +1005,7 @@
         function startQuiz() {
             // Prepare questions
             currentQuestions = generateQuestions();
+            console.log('Generated questions:', currentQuestions.length, currentQuestions);
             currentQuestionIndex = 0;
             score = 0;
             wrongAnswers = [];
@@ -1043,16 +1044,24 @@
                 });
             }
 
+            // Shuffle all items - ask ALL questions, not just 10
             items = shuffleArray(items);
-            const numQuestions = Math.min(10, items.length);
 
-            for (let i = 0; i < numQuestions; i++) {
+            // Create balanced question types: half 'name' type, half 'id' type
+            const halfPoint = Math.ceil(items.length / 2);
+            const questionTypes = items.map((_, index) => index < halfPoint ? 'name' : 'id');
+            // Shuffle the question types so they're mixed randomly
+            const shuffledTypes = shuffleArray(questionTypes);
+
+            for (let i = 0; i < items.length; i++) {
                 const item = items[i];
                 const category = item.category;
 
-                const questionType = Math.random() < 0.5 ? 'name' : 'id';
+                // Use the pre-shuffled balanced question type
+                const questionType = shuffledTypes[i];
 
-                const wrongAnswers = quizData[category]
+                // Get 3 wrong answer options (renamed to avoid conflict with global wrongAnswers)
+                const wrongOptions = quizData[category]
                     .filter(other => other.id !== item.id)
                     .slice(0, 3);
 
@@ -1061,9 +1070,10 @@
                 let correctAnswer;
 
                 // Store all answer items for map bounds
-                const answerItems = [item, ...wrongAnswers];
+                const answerItems = [item, ...wrongOptions];
 
                 if (questionType === 'name') {
+                    // "Welk land is Frankrijk?" or "Waar ligt Frankrijk?" → answer with letter
                     const templates = questionTemplates[category];
                     const template = templates[Math.floor(Math.random() * 2)];
                     question = template.replace('{name}', item.name).replace('{id}', item.id);
@@ -1074,6 +1084,7 @@
                     }));
                     correctAnswer = item.id;
                 } else {
+                    // "Welk land heeft letter G op de kaart?" → answer with name
                     const template = questionTemplates[category][2];
                     question = template.replace('{id}', item.id).replace('{name}', item.name);
 
@@ -1188,6 +1199,7 @@
 
         function nextQuestion() {
             currentQuestionIndex++;
+            console.log('nextQuestion called. Index:', currentQuestionIndex, 'Total:', currentQuestions.length, 'WrongAnswers:', wrongAnswers.length);
 
             if (currentQuestionIndex < currentQuestions.length) {
                 showQuestion();
