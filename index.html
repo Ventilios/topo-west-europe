@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Topografie Quiz - West-Europa</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Start Screen */
+        #start-screen {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        #start-screen h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.8em;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .category-btn {
+            padding: 20px;
+            font-size: 1.2em;
+            border: 3px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .category-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .category-btn.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .start-btn {
+            padding: 20px 60px;
+            font-size: 1.5em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .start-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Quiz Screen */
+        #quiz-screen {
+            display: none;
+        }
+
+        .quiz-container {
+            background: white;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .score-display {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .progress-display {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .map-container {
+            position: relative;
+            margin-bottom: 10px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        #map {
+            width: 100%;
+            height: calc(100vh - 380px);
+            min-height: 250px;
+            max-height: 500px;
+            border-radius: 12px;
+        }
+
+        /* Slightly enhance map visibility */
+        .leaflet-tile-pane {
+            filter: brightness(0.9) contrast(1.25) saturate(1.15);
+        }
+
+        .question-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .question-box h3 {
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .question-text {
+            font-size: 1.15em;
+        }
+
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .answer-btn {
+            padding: 20px;
+            font-size: 1.2em;
+            border: 3px solid #667eea;
+            background: white;
+            color: #333;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .answer-btn:hover:not(:disabled) {
+            background: #f0f3ff;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .answer-btn.correct {
+            background: #38ef7d !important;
+            border-color: #11998e !important;
+            color: white !important;
+            animation: pulse 0.5s ease;
+        }
+
+        .answer-btn.incorrect {
+            background: #f5576c !important;
+            border-color: #f093fb !important;
+            color: white !important;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .feedback-box {
+            text-align: center;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            display: none;
+            flex: 1;
+        }
+
+        .feedback-box.correct {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            display: block;
+        }
+
+        .feedback-box.incorrect {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            display: block;
+        }
+
+        .feedback-next-container {
+            display: flex;
+            gap: 15px;
+            align-items: stretch;
+            margin-top: 15px;
+        }
+
+        .next-btn {
+            display: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Results Screen */
+        #results-screen {
+            display: none;
+        }
+
+        .results-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .results-container h2 {
+            font-size: 2em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .final-score {
+            font-size: 4em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+        }
+
+        .score-message {
+            font-size: 1.5em;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .trophy {
+            font-size: 5em;
+            margin-bottom: 20px;
+        }
+
+        .restart-btn {
+            padding: 20px 60px;
+            font-size: 1.3em;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        .restart-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 8px;
+            }
+
+            #map {
+                height: calc(100vh - 420px);
+                min-height: 200px;
+                max-height: 350px;
+            }
+
+            .answers-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .answer-btn {
+                padding: 12px;
+                font-size: 1em;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .category-btn {
+                padding: 12px;
+                font-size: 1em;
+            }
+
+            .quiz-header {
+                justify-content: center;
+            }
+
+            .question-box {
+                padding: 10px;
+            }
+
+            .question-text {
+                font-size: 1.05em;
+            }
+
+            .feedback-next-container {
+                flex-direction: column;
+            }
+
+            .next-btn {
+                width: 100%;
+            }
+        }
+
+        /* iPad and tablet */
+        @media (min-width: 601px) and (max-width: 1024px) {
+            .container {
+                max-width: 100%;
+            }
+
+            #map {
+                height: calc(100vh - 400px);
+                min-height: 300px;
+                max-height: 450px;
+            }
+
+            .answers-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* Landscape mode */
+        @media (max-height: 600px) and (orientation: landscape) {
+            h1 {
+                font-size: 1.3em;
+                margin-bottom: 5px;
+            }
+
+            .quiz-container {
+                padding: 10px;
+            }
+
+            #map {
+                height: calc(100vh - 320px);
+                min-height: 150px;
+                max-height: 250px;
+            }
+
+            .question-box {
+                padding: 8px;
+            }
+
+            .question-box h3 {
+                font-size: 1em;
+                margin-bottom: 2px;
+            }
+
+            .question-text {
+                font-size: 1em;
+            }
+
+            .answers-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+
+            .answer-btn {
+                padding: 10px;
+                font-size: 0.95em;
+            }
+        }
+
+        /* Fun animations */
+        .bounce-in {
+            animation: bounceIn 0.6s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .category-icon {
+            font-size: 2em;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        /* Legend */
+        .legend {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-size: 12px;
+            line-height: 1.8;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-marker {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        /* Map filter controls */
+        .filter-controls {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            padding: 8px 12px;
+            font-size: 0.85em;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            background: #f0f0ff;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Topografie Quiz - West-Europa 🌍</h1>
+
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <h2>Kies een categorie om te oefenen:</h2>
+            <div class="category-grid">
+                <button class="category-btn" data-category="all">
+                    <span class="category-icon">🌟</span>
+                    Alles
+                </button>
+                <button class="category-btn" data-category="landen">
+                    <span class="category-icon">🏳️</span>
+                    Landen
+                </button>
+                <button class="category-btn" data-category="hoofdsteden">
+                    <span class="category-icon">🏛️</span>
+                    Hoofdsteden
+                </button>
+                <button class="category-btn" data-category="steden">
+                    <span class="category-icon">🏙️</span>
+                    Steden
+                </button>
+                <button class="category-btn" data-category="wateren">
+                    <span class="category-icon">🌊</span>
+                    Wateren
+                </button>
+                <button class="category-btn" data-category="gebieden">
+                    <span class="category-icon">🗺️</span>
+                    Gebieden
+                </button>
+                <button class="category-btn" data-category="gebergten">
+                    <span class="category-icon">🏔️</span>
+                    Gebergten
+                </button>
+            </div>
+            <button class="start-btn" id="start-btn" disabled>Start de Quiz! 🚀</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen">
+            <div class="quiz-container">
+                <div class="quiz-header">
+                    <div class="score-display">⭐ Score: <span id="score">0</span></div>
+                    <div class="filter-controls" style="margin-bottom:0;">
+                        <button class="filter-btn" data-filter="standard">Standaard</button>
+                        <button class="filter-btn active" data-filter="contrast">Hoog contrast</button>
+                    </div>
+                    <div class="progress-display"><span id="progress-display-text">📝 Vraag</span> <span id="current-question">1</span>/<span id="total-questions">10</span></div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+
+                <div class="map-container">
+                    <div id="map"></div>
+                </div>
+
+                <div class="question-box">
+                    <h3 id="question-category">Categorie</h3>
+                    <p class="question-text" id="question-text">Vraag komt hier...</p>
+                </div>
+
+                <div class="answers-grid" id="answers-container">
+                    <!-- Answers will be inserted here -->
+                </div>
+
+                <div class="feedback-next-container">
+                    <div class="feedback-box" id="feedback-box"></div>
+                    <button class="next-btn" id="next-btn">Volgende vraag ➡️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen">
+            <div class="results-container bounce-in">
+                <div class="trophy" id="trophy">🏆</div>
+                <h2>Quiz Voltooid!</h2>
+                <div class="final-score" id="final-score">0/10</div>
+                <p class="score-message" id="score-message">Goed gedaan!</p>
+                <button class="restart-btn" onclick="restartQuiz()">🔄 Opnieuw spelen</button>
+                <button class="restart-btn" onclick="goToStart()">🏠 Terug naar start</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Quiz Data with coordinates - Based on topography.txt
+        const quizData = {
+            landen: [
+                { id: 'A', name: 'Ierland', lat: 53.5, lng: -8.0 },
+                { id: 'B', name: 'Verenigd Koninkrijk', lat: 54.5, lng: -2.5 },
+                { id: 'C', name: 'Nederland', lat: 52.3, lng: 5.3 },
+                { id: 'D', name: 'Duitsland', lat: 51.2, lng: 10.5 },
+                { id: 'E', name: 'België', lat: 50.5, lng: 4.5 },
+                { id: 'F', name: 'Luxemburg', lat: 49.75, lng: 6.1 },
+                { id: 'G', name: 'Frankrijk', lat: 46.6, lng: 2.5 }
+            ],
+            hoofdsteden: [
+                { id: '1', name: 'Dublin', lat: 53.35, lng: -6.26 },
+                { id: '2', name: 'Londen', lat: 51.51, lng: -0.13 },
+                { id: '3', name: 'Brussel', lat: 50.85, lng: 4.35 },
+                { id: '4', name: 'Luxemburg', lat: 49.61, lng: 6.13 },
+                { id: '5', name: 'Berlijn', lat: 52.52, lng: 13.41 },
+                { id: '6', name: 'Parijs', lat: 48.86, lng: 2.35 }
+            ],
+            steden: [
+                { id: '7', name: 'Glasgow', lat: 55.86, lng: -4.25 },
+                { id: '8', name: 'Liverpool', lat: 53.41, lng: -2.99 },
+                { id: '9', name: 'Antwerpen', lat: 51.22, lng: 4.40 },
+                { id: '10', name: 'Keulen', lat: 50.94, lng: 6.96 },
+                { id: '11', name: 'Hamburg', lat: 53.55, lng: 9.99 },
+                { id: '12', name: 'München', lat: 48.14, lng: 11.58 },
+                { id: '13', name: 'Bordeaux', lat: 44.84, lng: -0.58 },
+                { id: '14', name: 'Lyon', lat: 45.76, lng: 4.84 },
+                { id: '15', name: 'Marseille', lat: 43.30, lng: 5.37 }
+            ],
+            wateren: [
+                { id: 'a', name: 'Atlantische Oceaan', lat: 48.0, lng: -12.0 },
+                { id: 'b', name: 'Het Kanaal', lat: 50.0, lng: -1.5 },
+                { id: 'c', name: 'Noordzee', lat: 56.0, lng: 3.5 },
+                { id: 'd', name: 'Oostzee', lat: 55.5, lng: 14.0 },
+                { id: 'e', name: 'Middellandse Zee', lat: 41.5, lng: 5.0 },
+                { id: 'f', name: 'Theems', lat: 51.48, lng: 0.0 },
+                { id: 'g', name: 'Schelde', lat: 51.35, lng: 4.25 },
+                { id: 'h', name: 'Maas', lat: 50.85, lng: 5.7 },
+                { id: 'i', name: 'Rijn', lat: 50.5, lng: 7.5 },
+                { id: 'j', name: 'Seine', lat: 49.0, lng: 2.0 },
+                { id: 'k', name: 'Rhône', lat: 44.5, lng: 4.8 }
+            ],
+            gebieden: [
+                { id: 'H', name: 'Schotland', lat: 56.8, lng: -4.5 },
+                { id: 'I', name: 'Engeland', lat: 52.5, lng: -1.2 },
+                { id: 'J', name: 'Ruhrgebied', lat: 51.45, lng: 7.2 },
+                { id: 'K', name: 'Vlaanderen', lat: 51.0, lng: 3.7 },
+                { id: 'L', name: 'Wallonië', lat: 50.25, lng: 4.9 }
+            ],
+            gebergten: [
+                { id: 'l', name: 'Ardennen', lat: 50.15, lng: 5.6 },
+                { id: 'm', name: 'Alpen', lat: 46.8, lng: 10.5 },
+                { id: 'n', name: 'Pyreneeën', lat: 42.7, lng: 0.5 }
+            ]
+        };
+
+        const categoryNames = {
+            landen: 'Landen 🏳️',
+            hoofdsteden: 'Hoofdsteden 🏛️',
+            steden: 'Steden 🏙️',
+            wateren: 'Wateren 🌊',
+            gebieden: 'Gebieden 🗺️',
+            gebergten: 'Gebergten 🏔️'
+        };
+
+        const markerStyles = {
+            landen: { bg: '#ffcccc', border: '#8B0000', color: '#8B0000' },
+            hoofdsteden: { bg: '#ccffcc', border: '#006400', color: '#006400' },
+            steden: { bg: '#cce5ff', border: '#00008B', color: '#00008B' },
+            wateren: { bg: '#e6f3ff', border: '#0066aa', color: '#0066aa' },
+            gebieden: { bg: '#e6ccff', border: '#663399', color: '#663399' },
+            gebergten: { bg: '#f5deb3', border: '#8B4513', color: '#8B4513' }
+        };
+
+        const questionTemplates = {
+            landen: [
+                'Welk land is {name}?',
+                'Waar ligt {name}?',
+                'Welk land heeft de letter {id} op de kaart?'
+            ],
+            hoofdsteden: [
+                'Welke hoofdstad is {name}?',
+                'Waar ligt de hoofdstad {name}?',
+                'Welke hoofdstad heeft nummer {id} op de kaart?'
+            ],
+            steden: [
+                'Welke stad is {name}?',
+                'Waar ligt de stad {name}?',
+                'Welke stad heeft nummer {id} op de kaart?'
+            ],
+            wateren: [
+                'Welk water is de {name}?',
+                'Waar ligt de {name}?',
+                'Welk water heeft letter {id} op de kaart?'
+            ],
+            gebieden: [
+                'Welk gebied is {name}?',
+                'Waar ligt {name}?',
+                'Welk gebied heeft letter {id} op de kaart?'
+            ],
+            gebergten: [
+                'Welk gebergte zijn de {name}?',
+                'Waar liggen de {name}?',
+                'Welk gebergte heeft letter {id} op de kaart?'
+            ]
+        };
+
+        // Game State
+        let selectedCategory = null;
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answered = false;
+        let map = null;
+        let markers = [];
+        let wrongAnswers = [];
+        let retryMode = false;
+        let totalOriginalQuestions = 0;
+
+        // DOM Elements
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultsScreen = document.getElementById('results-screen');
+        const startBtn = document.getElementById('start-btn');
+        const categoryBtns = document.querySelectorAll('.category-btn');
+        const answersContainer = document.getElementById('answers-container');
+        const nextBtn = document.getElementById('next-btn');
+        const feedbackBox = document.getElementById('feedback-box');
+
+        // Event Listeners
+        categoryBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                categoryBtns.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                selectedCategory = btn.dataset.category;
+                startBtn.disabled = false;
+            });
+        });
+
+        startBtn.addEventListener('click', startQuiz);
+        nextBtn.addEventListener('click', nextQuestion);
+
+        function createMarkerIcon(id, category) {
+            const style = markerStyles[category];
+            const size = category === 'landen' ? 32 : 26;
+            const fontSize = category === 'landen' ? 14 : 12;
+            
+            return L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div style="
+                    background: ${style.bg};
+                    border: 3px solid ${style.border};
+                    color: ${style.color};
+                    border-radius: 50%;
+                    width: ${size}px;
+                    height: ${size}px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: bold;
+                    font-size: ${fontSize}px;
+                    font-family: Arial, sans-serif;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+                ">${id}</div>`,
+                iconSize: [size, size],
+                iconAnchor: [size/2, size/2]
+            });
+        }
+
+        let riverLayer = null;
+
+        // River overlays data - approximate paths for quiz rivers
+        const riversData = {
+            "type": "FeatureCollection",
+            "features": [
+                // Theems - from source to London estuary
+                {"type": "Feature", "properties": {"name": "Theems"}, "geometry": {"type": "LineString", "coordinates": [
+                    [-2.0, 51.7], [-1.5, 51.65], [-1.2, 51.6], [-0.8, 51.55], [-0.5, 51.5], [0.0, 51.48], [0.5, 51.47], [1.0, 51.5]
+                ]}},
+                // Schelde - Belgium to North Sea
+                {"type": "Feature", "properties": {"name": "Schelde"}, "geometry": {"type": "LineString", "coordinates": [
+                    [3.2, 50.0], [3.4, 50.4], [3.6, 50.7], [3.8, 50.9], [4.0, 51.1], [4.25, 51.35], [4.4, 51.45]
+                ]}},
+                // Maas - France through Belgium/Netherlands
+                {"type": "Feature", "properties": {"name": "Maas"}, "geometry": {"type": "LineString", "coordinates": [
+                    [5.6, 48.1], [5.4, 48.5], [5.2, 49.0], [4.9, 49.5], [4.8, 50.0], [4.9, 50.4], [5.2, 50.6], [5.5, 50.8], [5.7, 51.0], [5.5, 51.4], [5.0, 51.7], [4.6, 51.8]
+                ]}},
+                // Rijn - Alps to North Sea
+                {"type": "Feature", "properties": {"name": "Rijn"}, "geometry": {"type": "LineString", "coordinates": [
+                    [9.5, 46.8], [9.2, 47.2], [8.6, 47.6], [7.8, 48.0], [8.2, 48.5], [8.4, 49.0], [8.2, 49.5], [7.8, 50.0], [7.3, 50.4], [7.0, 50.7], [6.7, 51.0], [6.4, 51.4], [6.0, 51.7], [5.5, 51.9], [5.0, 51.95], [4.5, 52.0]
+                ]}},
+                // Seine - to Paris and channel
+                {"type": "Feature", "properties": {"name": "Seine"}, "geometry": {"type": "LineString", "coordinates": [
+                    [4.7, 47.5], [4.2, 47.8], [3.8, 48.1], [3.4, 48.3], [3.0, 48.5], [2.6, 48.7], [2.35, 48.85], [2.0, 49.0], [1.5, 49.2], [1.0, 49.4], [0.5, 49.5], [0.2, 49.45]
+                ]}},
+                // Rhône - Alps to Mediterranean
+                {"type": "Feature", "properties": {"name": "Rhône"}, "geometry": {"type": "LineString", "coordinates": [
+                    [7.0, 46.4], [6.9, 46.2], [6.6, 46.1], [6.2, 46.2], [5.8, 45.9], [5.5, 45.7], [5.2, 45.5], [4.9, 45.3], [4.8, 45.0], [4.8, 44.5], [4.8, 44.0], [4.7, 43.7], [4.6, 43.4], [4.8, 43.3]
+                ]}}
+            ]
+        };
+
+        function showRivers() {
+            if (!riverLayer && map) {
+                riverLayer = L.geoJSON(riversData, {
+                    style: {
+                        color: '#0077be',
+                        weight: 4,
+                        opacity: 0.8
+                    }
+                }).addTo(map);
+            }
+        }
+
+        function hideRivers() {
+            if (riverLayer && map) {
+                map.removeLayer(riverLayer);
+                riverLayer = null;
+            }
+        }
+
+        function initMap() {
+            if (map) {
+                map.remove();
+                riverLayer = null;
+            }
+
+            map = L.map('map', {
+                center: [50, 5],
+                zoom: 5,
+                minZoom: 4,
+                maxZoom: 8
+            });
+
+            // CartoDB Voyager without labels - clean map without place names
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png', {
+                attribution: '© OpenStreetMap contributors © CARTO',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Show rivers if wateren category selected
+            if (selectedCategory === 'wateren') {
+                showRivers();
+            }
+
+            // Add legend based on selected category
+            const legend = L.control({ position: 'bottomright' });
+            legend.onAdd = function() {
+                const div = L.DomUtil.create('div', 'legend');
+                if (selectedCategory === 'all') {
+                    div.innerHTML = `
+                        <div class="legend-item"><div class="legend-marker" style="background:#ffcccc;border-color:#8B0000;color:#8B0000">A</div> Landen</div>
+                        <div class="legend-item"><div class="legend-marker" style="background:#ccffcc;border-color:#006400;color:#006400">1</div> Hoofdsteden</div>
+                        <div class="legend-item"><div class="legend-marker" style="background:#cce5ff;border-color:#00008B;color:#00008B">7</div> Steden</div>
+                        <div class="legend-item"><div class="legend-marker" style="background:#e6f3ff;border-color:#0066aa;color:#0066aa">a</div> Wateren</div>
+                        <div class="legend-item"><div class="legend-marker" style="background:#e6ccff;border-color:#663399;color:#663399">H</div> Gebieden</div>
+                        <div class="legend-item"><div class="legend-marker" style="background:#f5deb3;border-color:#8B4513;color:#8B4513">m</div> Gebergten</div>
+                    `;
+                } else {
+                    const style = markerStyles[selectedCategory];
+                    const exampleId = quizData[selectedCategory][0].id;
+                    div.innerHTML = `
+                        <div class="legend-item"><div class="legend-marker" style="background:${style.bg};border-color:${style.border};color:${style.color}">${exampleId}</div> ${categoryNames[selectedCategory].replace(/[^\w\s]/g, '')}</div>
+                    `;
+                }
+                return div;
+            };
+            legend.addTo(map);
+
+            // Add markers for selected category only
+            addMarkers();
+        }
+
+        function addMarkers(categoryToShow = null) {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+
+            // Determine which categories to show
+            let categoriesToShow;
+            if (categoryToShow) {
+                // Show specific category (used for 'all' mode per question)
+                categoriesToShow = [categoryToShow];
+            } else if (selectedCategory === 'all') {
+                categoriesToShow = Object.keys(quizData);
+            } else {
+                categoriesToShow = [selectedCategory];
+            }
+
+            categoriesToShow.forEach(category => {
+                quizData[category].forEach(item => {
+                    const marker = L.marker([item.lat, item.lng], {
+                        icon: createMarkerIcon(item.id, category)
+                    });
+                    marker.addTo(map);
+                    markers.push(marker);
+                });
+            });
+        }
+
+        function startQuiz() {
+            // Prepare questions
+            currentQuestions = generateQuestions();
+            currentQuestionIndex = 0;
+            score = 0;
+            wrongAnswers = [];
+            retryMode = false;
+            totalOriginalQuestions = currentQuestions.length;
+
+            // Update UI
+            document.getElementById('total-questions').textContent = currentQuestions.length;
+            document.getElementById('progress-display-text').textContent = '📝 Vraag';
+            nextBtn.textContent = 'Volgende vraag ➡️';
+            nextBtn.onclick = nextQuestion;
+            startScreen.style.display = 'none';
+            quizScreen.style.display = 'block';
+            resultsScreen.style.display = 'none';
+
+            // Initialize map after showing quiz screen
+            setTimeout(() => {
+                initMap();
+                showQuestion();
+            }, 100);
+        }
+
+        function generateQuestions() {
+            let questions = [];
+            let items = [];
+
+            if (selectedCategory === 'all') {
+                Object.keys(quizData).forEach(cat => {
+                    quizData[cat].forEach(item => {
+                        items.push({ ...item, category: cat });
+                    });
+                });
+            } else {
+                quizData[selectedCategory].forEach(item => {
+                    items.push({ ...item, category: selectedCategory });
+                });
+            }
+
+            items = shuffleArray(items);
+            const numQuestions = Math.min(10, items.length);
+
+            for (let i = 0; i < numQuestions; i++) {
+                const item = items[i];
+                const category = item.category;
+
+                const questionType = Math.random() < 0.5 ? 'name' : 'id';
+
+                const wrongAnswers = quizData[category]
+                    .filter(other => other.id !== item.id)
+                    .slice(0, 3);
+
+                let question;
+                let answers;
+                let correctAnswer;
+
+                // Store all answer items for map bounds
+                const answerItems = [item, ...wrongAnswers];
+
+                if (questionType === 'name') {
+                    const templates = questionTemplates[category];
+                    const template = templates[Math.floor(Math.random() * 2)];
+                    question = template.replace('{name}', item.name).replace('{id}', item.id);
+
+                    answers = answerItems.map(a => ({
+                        text: a.id,
+                        isCorrect: a.id === item.id
+                    }));
+                    correctAnswer = item.id;
+                } else {
+                    const template = questionTemplates[category][2];
+                    question = template.replace('{id}', item.id).replace('{name}', item.name);
+
+                    answers = answerItems.map(a => ({
+                        text: a.name,
+                        isCorrect: a.id === item.id
+                    }));
+                    correctAnswer = item.name;
+                }
+
+                answers = shuffleArray(answers);
+
+                questions.push({
+                    category: category,
+                    question: question,
+                    answers: answers,
+                    correctAnswer: correctAnswer,
+                    item: item,
+                    questionType: questionType,
+                    answerItems: answerItems
+                });
+            }
+
+            return questions;
+        }
+
+        function showQuestion() {
+            const q = currentQuestions[currentQuestionIndex];
+            answered = false;
+
+            document.getElementById('current-question').textContent = currentQuestionIndex + 1;
+            document.getElementById('score').textContent = score;
+
+            const progress = ((currentQuestionIndex) / currentQuestions.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+
+            document.getElementById('question-category').textContent = categoryNames[q.category];
+            document.getElementById('question-text').textContent = q.question;
+
+            // Update markers to show only the current question's category when in 'all' mode
+            if (selectedCategory === 'all') {
+                addMarkers(q.category);
+                // Show/hide rivers based on current question category
+                if (q.category === 'wateren') {
+                    showRivers();
+                } else {
+                    hideRivers();
+                }
+            }
+
+            // Adjust map view based on question type
+            if (map) {
+                if (q.questionType === 'name' && q.answerItems) {
+                    // For "Waar ligt X?" questions, zoom out to show all answer options
+                    const bounds = L.latLngBounds(q.answerItems.map(a => [a.lat, a.lng]));
+                    map.fitBounds(bounds, { padding: [50, 50], animate: true, maxZoom: 6 });
+                } else {
+                    // For "Welk land heeft letter X?" questions, center on the item
+                    map.setView([q.item.lat, q.item.lng], 6, { animate: true });
+                }
+            }
+
+            answersContainer.innerHTML = '';
+            q.answers.forEach((answer, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer.text;
+                btn.onclick = () => selectAnswer(answer.isCorrect, btn, q.correctAnswer, q);
+                answersContainer.appendChild(btn);
+            });
+
+            feedbackBox.style.display = 'none';
+            feedbackBox.className = 'feedback-box';
+            nextBtn.style.display = 'none';
+        }
+
+        function selectAnswer(isCorrect, selectedBtn, correctAnswer, questionObj) {
+            if (answered) return;
+            answered = true;
+
+            const allBtns = answersContainer.querySelectorAll('.answer-btn');
+            allBtns.forEach(btn => btn.disabled = true);
+
+            if (isCorrect) {
+                selectedBtn.classList.add('correct');
+                feedbackBox.textContent = '🎉 Correct! Goed gedaan!';
+                feedbackBox.className = 'feedback-box correct';
+                if (!retryMode) {
+                    score++;
+                    document.getElementById('score').textContent = score;
+                }
+            } else {
+                selectedBtn.classList.add('incorrect');
+                feedbackBox.textContent = `❌ Helaas! Het juiste antwoord is: ${correctAnswer}`;
+                feedbackBox.className = 'feedback-box incorrect';
+                
+                // Track wrong answer for retry
+                if (questionObj) {
+                    wrongAnswers.push(questionObj);
+                }
+
+                allBtns.forEach(btn => {
+                    if (btn.textContent === correctAnswer || btn.textContent.includes(correctAnswer)) {
+                        btn.classList.add('correct');
+                    }
+                });
+            }
+
+            feedbackBox.style.display = 'block';
+            nextBtn.style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < currentQuestions.length) {
+                showQuestion();
+            } else if (wrongAnswers.length > 0) {
+                // Start retry mode with wrong answers
+                startRetryRound();
+            } else {
+                showResults();
+            }
+        }
+
+        function startRetryRound() {
+            retryMode = true;
+            currentQuestions = shuffleArray([...wrongAnswers]);
+            wrongAnswers = [];
+            currentQuestionIndex = 0;
+            
+            // Show retry message
+            feedbackBox.textContent = `🔄 Herhaling! Je moet ${currentQuestions.length} ${currentQuestions.length === 1 ? 'vraag' : 'vragen'} nog een keer beantwoorden.`;
+            feedbackBox.className = 'feedback-box';
+            feedbackBox.style.display = 'block';
+            feedbackBox.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+            feedbackBox.style.color = 'white';
+            
+            document.getElementById('progress-display-text').textContent = 'Herhaling';
+            document.getElementById('total-questions').textContent = currentQuestions.length;
+            document.getElementById('current-question').textContent = '0';
+            
+            nextBtn.textContent = 'Start herhaling 🔄';
+            nextBtn.style.display = 'block';
+            nextBtn.onclick = function() {
+                nextBtn.textContent = 'Volgende vraag ➡️';
+                nextBtn.onclick = nextQuestion;
+                feedbackBox.style.background = '';
+                feedbackBox.style.color = '';
+                showQuestion();
+            };
+        }
+
+        function showResults() {
+            quizScreen.style.display = 'none';
+            resultsScreen.style.display = 'block';
+
+            const percentage = (score / totalOriginalQuestions) * 100;
+
+            document.getElementById('final-score').textContent = `${score}/${totalOriginalQuestions}`;
+
+            let message, trophy;
+            if (percentage === 100) {
+                message = '🌟 Perfect! Je bent een topografie kampioen! 🌟';
+                trophy = '🏆';
+            } else if (percentage >= 80) {
+                message = '🎉 Uitstekend! Je kent West-Europa heel goed!';
+                trophy = '🥇';
+            } else if (percentage >= 60) {
+                message = '👍 Goed gedaan! Blijf oefenen!';
+                trophy = '🥈';
+            } else if (percentage >= 40) {
+                message = '💪 Je bent op de goede weg! Probeer het nog eens!';
+                trophy = '🥉';
+            } else {
+                message = '📚 Blijf oefenen, je kunt het! Probeer het nog eens!';
+                trophy = '⭐';
+            }
+
+            document.getElementById('score-message').textContent = message;
+            document.getElementById('trophy').textContent = trophy;
+        }
+
+        function restartQuiz() {
+            startQuiz();
+        }
+
+        function goToStart() {
+            resultsScreen.style.display = 'none';
+            quizScreen.style.display = 'none';
+            startScreen.style.display = 'block';
+            
+            categoryBtns.forEach(b => b.classList.remove('selected'));
+            startBtn.disabled = true;
+            selectedCategory = null;
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // Filter controls for map styling
+        const filterPresets = {
+            standard: 'brightness(1) saturate(1.2)',
+            contrast: 'brightness(0.95) contrast(1.2) saturate(1.3)'
+        };
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = filterPresets[this.dataset.filter];
+                document.querySelector('.leaflet-tile-pane').style.filter = filter;
+            });
+        });
+    </script>
+</body>
+</html>

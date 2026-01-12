@@ -1,0 +1,52 @@
+# Landen
+A. Ierland
+B. Verenigd Koninkrijk
+C. Nederland
+D. Duitsland
+E. België
+F. Luxemburg
+G. Frankrijk
+
+# Hoofdsteden
+1. Dublin
+2. Londen
+3. Brussel
+4. Luxemburg
+5. Berlijn
+6. Parijs
+
+# Steden
+7. Glasgow
+8. Liverpool
+9. Antwerpen
+10. Keulen
+11. Hamburg
+12. München
+13. Bordeaux
+14. Lyon
+15. Marseille
+
+# Wateren
+a. Atlantische Oceaan
+b. Het Kanaal
+c. Noordzee
+d. Oostzee
+e. Middellandse Zee
+f. Theems
+g. Schelde
+h. Maas
+i. Rijn
+j. Seine
+k. Rhône
+
+# Gebieden
+H. Schotland
+I. Engeland
+J. Ruhrgebied
+K. Vlaanderen
+L. Wallonië
+
+# Gebergten
+l. Ardennen
+m. Alpen
+n. Pyreneeën
