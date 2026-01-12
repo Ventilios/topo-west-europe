@@ -277,6 +277,7 @@
             gap: 15px;
             align-items: stretch;
             margin-top: 15px;
+            margin-bottom: 20px;
         }
 
         .next-btn {
@@ -301,6 +302,61 @@
         /* Results Screen */
         #results-screen {
             display: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Party Animals Animation */
+        .party-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .party-animal {
+            position: absolute;
+            font-size: 3em;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+        }
+
+        @keyframes runLeft {
+            0% { transform: translateX(100vw) scaleX(-1) rotate(0deg); }
+            25% { transform: translateX(75vw) scaleX(-1) rotate(-10deg); }
+            50% { transform: translateX(50vw) scaleX(-1) rotate(10deg); }
+            75% { transform: translateX(25vw) scaleX(-1) rotate(-10deg); }
+            100% { transform: translateX(-100px) scaleX(-1) rotate(0deg); }
+        }
+
+        @keyframes runRight {
+            0% { transform: translateX(-100px) rotate(0deg); }
+            25% { transform: translateX(25vw) rotate(10deg); }
+            50% { transform: translateX(50vw) rotate(-10deg); }
+            75% { transform: translateX(75vw) rotate(10deg); }
+            100% { transform: translateX(100vw) rotate(0deg); }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+        }
+
+        @keyframes confetti-fall {
+            0% { transform: translateY(-100px) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            animation: confetti-fall linear forwards;
         }
 
         .results-container {
@@ -608,13 +664,13 @@
                     <p class="question-text" id="question-text">Vraag komt hier...</p>
                 </div>
 
-                <div class="answers-grid" id="answers-container">
-                    <!-- Answers will be inserted here -->
-                </div>
-
                 <div class="feedback-next-container">
                     <div class="feedback-box" id="feedback-box"></div>
                     <button class="next-btn" id="next-btn">Volgende vraag ➡️</button>
+                </div>
+
+                <div class="answers-grid" id="answers-container">
+                    <!-- Answers will be inserted here -->
                 </div>
             </div>
         </div>
@@ -1251,6 +1307,8 @@
             if (percentage === 100) {
                 message = '🌟 Perfect! Je bent een topografie kampioen! 🌟';
                 trophy = '🏆';
+                // Start the party animation!
+                startPartyAnimation();
             } else if (percentage >= 80) {
                 message = '🎉 Uitstekend! Je kent West-Europa heel goed!';
                 trophy = '🥇';
@@ -1269,7 +1327,82 @@
             document.getElementById('trophy').textContent = trophy;
         }
 
+        function startPartyAnimation() {
+            // Create party container
+            const partyContainer = document.createElement('div');
+            partyContainer.className = 'party-container';
+            partyContainer.id = 'party-container';
+            document.body.appendChild(partyContainer);
+
+            // Party animals with their emojis
+            const animals = ['🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄', '🐔', '🐧', '🐣', '🦆', '🐷', '🐮', '🐴'];
+            const partyItems = ['🎉', '🎊', '🎈', '🎁', '🥳', '🎺', '🎸', '🪇', '💃', '🕺'];
+            
+            // Spawn waves of party animals
+            for (let wave = 0; wave < 4; wave++) {
+                setTimeout(() => {
+                    // Animals running across
+                    for (let i = 0; i < 5; i++) {
+                        setTimeout(() => {
+                            const animal = document.createElement('div');
+                            animal.className = 'party-animal';
+                            animal.textContent = animals[Math.floor(Math.random() * animals.length)];
+                            
+                            const direction = Math.random() > 0.5 ? 'runLeft' : 'runRight';
+                            const topPos = 20 + Math.random() * 60; // Random vertical position
+                            const duration = 3 + Math.random() * 2; // 3-5 seconds
+                            
+                            animal.style.top = topPos + '%';
+                            animal.style.animation = `${direction} ${duration}s linear forwards`;
+                            
+                            // Add bouncing effect
+                            const bouncer = document.createElement('span');
+                            bouncer.style.display = 'inline-block';
+                            bouncer.style.animation = 'bounce 0.3s ease-in-out infinite';
+                            bouncer.textContent = animal.textContent;
+                            animal.textContent = '';
+                            animal.appendChild(bouncer);
+                            
+                            partyContainer.appendChild(animal);
+                            
+                            // Remove after animation
+                            setTimeout(() => animal.remove(), duration * 1000);
+                        }, i * 400);
+                    }
+                }, wave * 2000);
+            }
+
+            // Add confetti
+            const colors = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#54a0ff', '#5f27cd', '#00d2d3', '#1dd1a1'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                    confetti.style.width = (5 + Math.random() * 10) + 'px';
+                    confetti.style.height = (5 + Math.random() * 10) + 'px';
+                    confetti.style.animationDuration = (2 + Math.random() * 3) + 's';
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    
+                    partyContainer.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 5000);
+                }, i * 100);
+            }
+
+            // Clean up party container after animations
+            setTimeout(() => {
+                partyContainer.remove();
+            }, 12000);
+        }
+
         function restartQuiz() {
+            // Clean up any party animations
+            const partyContainer = document.getElementById('party-container');
+            if (partyContainer) partyContainer.remove();
+            
             startQuiz();
         }
 
